@@ -1,0 +1,42 @@
+- hosts: localhost
+  gather_facts: no
+  vars:
+    bios_settings:
+      - aaa/bbb/ccc:
+        settings:
+          - "set1: enabled"
+          - "set2: enabled"
+          - "set3: enabled"
+      - hhh/jjj/kkk:
+        settings:
+          - "get1: enabled"
+          - "get2: enabled"
+          - "get3: enabled"
+
+  tasks:
+
+t: "{{ lookup('template','/Users//DEV/DEVOPS/ansible/g.j2')|from_yaml }}"
+
+    - name: inc
+      include_vars: /Users//DEV/DEVOPS/ansible/real_bios.yml
+
+
+
+    - name: save results
+      template:
+        src: /Users//DEV/DEVOPS/ansible/dictcheck.j2
+        dest: /Users//DEV/DEVOPS/ansible/results.txt
+    - name: send
+      debug: msg="url = {{ item[0]|first }} - settings = {{ item[1] }}"
+      with_subelements:
+        - "{{ bios_settings }}"
+        - settings
+        
+{% for dic in bios_settings  -%}  
+url: {{dic|first}}
+{% for idic in dic.settings  -%}
+{% set value=idic.split(':')|trim %}
+   settings: \"{{ value[0] }}: {{ value[1] }}\"
+{% endfor %}
+{% endfor %}
+         
