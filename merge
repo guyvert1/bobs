@@ -1,0 +1,148 @@
+- hosts: localhost
+  gather_facts: no
+  vars:
+    bios_settings:
+      - aaa/bbb/ccc:
+        settings:
+          - "set1: enabled"
+          - "set2: enabled"
+          - "set3: enabled"
+      - hhh/jjj/kkk:
+        settings:
+          - "get1: enabled"
+          - "get2: enabled"
+          - "get3: enabled"
+    vm_groups:
+      - vgname: misc-vg
+        disks: /dev/sda5,/dev/sdc,/dev/sdd
+        create: true
+        lvnames:
+          - lvname: swap_1
+            size: 5g
+            create: true
+            filesystem:
+            mount: false
+          - lvname: mysql
+            size: 40g
+            create: true
+            filesystem: ext4
+            mount: true
+            mount_point: /var/lib/mysql
+            mount_options: 'defaults,noatime'
+      - vgname: vg3
+        disks: /dev/sda5,/dev/sdc,/dev/sdd
+        create: true
+        lvnames:
+          - lvname: swap_1
+            size: 5g
+            create: true
+            filesystem:
+            mount: false
+          - lvname: mysql
+            size: 40g
+            create: true
+            filesystem: ext4
+            mount: true
+            mount_point: /var/lib/mysql
+            mount_options: 'defaults,noatime'
+    vm_groups1:
+      - vgname: vg4g
+        disks: /dev/sda5,/dev/sdc,/dev/sdd
+        create: true
+        lvnames:
+          - lvname: swap_1
+            size: 15g
+            create: true
+            filesystem:
+            mount: false
+          - lvname: data
+            size: 10g
+            create: true
+            filesystem: ext4
+            mount: true
+            mount_point: /var/lib/mysql
+            mount_options: 'defaults,noatime'
+  tasks:
+   - name: combine
+      set_fact:
+        merge:  "{{ vm_groups +vm_groups1 }}"
+
+----------
+ok: [localhost] => {
+    "ansible_facts": {
+        "merge": [
+            {
+                "create": true,
+                "disks": "/dev/sda5,/dev/sdc,/dev/sdd",
+                "lvnames": [
+                    {
+                        "create": true,
+                        "filesystem": null,
+                        "lvname": "swap_1",
+                        "mount": false,
+                        "size": "5g"
+                    },
+                    {
+                        "create": true,
+                        "filesystem": "ext4",
+                        "lvname": "mysql",
+                        "mount": true,
+                        "mount_options": "defaults,noatime",
+                        "mount_point": "/var/lib/mysql",
+                        "size": "40g"
+                    }
+                ],
+                "vgname": "misc-vg"
+            },
+            {
+                "create": true,
+                "disks": "/dev/sda5,/dev/sdc,/dev/sdd",
+                "lvnames": [
+                    {
+                        "create": true,
+                        "filesystem": null,
+                        "lvname": "swap_1",
+                        "mount": false,
+                        "size": "5g"
+                    },
+                    {
+                        "create": true,
+                        "filesystem": "ext4",
+                        "lvname": "mysql",
+                        "mount": true,
+                        "mount_options": "defaults,noatime",
+                        "mount_point": "/var/lib/mysql",
+                        "size": "40g"
+                    }
+                ],
+                "vgname": "vg3"
+            },
+            {
+                "create": true,
+                "disks": "/dev/sda5,/dev/sdc,/dev/sdd",
+                "lvnames": [
+                    {
+                        "create": true,
+                        "filesystem": null,
+                        "lvname": "swap_1",
+                        "mount": false,
+                        "size": "15g"
+                    },
+                    {
+                        "create": true,
+                        "filesystem": "ext4",
+                        "lvname": "data",
+                        "mount": true,
+                        "mount_options": "defaults,noatime",
+                        "mount_point": "/var/lib/mysql",
+                        "size": "10g"
+                    }
+                ],
+                "vgname": "vg4g"
+            }
+        ]
+    },
+    "changed": false,
+    "failed": false
+}
+
