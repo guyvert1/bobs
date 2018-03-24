@@ -35,8 +35,8 @@ t: "{{ lookup('template','/Users//DEV/DEVOPS/ansible/g.j2')|from_yaml }}"
 {% for dic in bios_settings  -%}  
 url: {{dic|first}}
 {% for idic in dic.settings  -%}
-{% set value=idic.split(':')|trim %}
-   settings: \"{{ value[0] }}: {{ value[1] }}\"
+{% set value=idic.split(':') %}
+   settings: "{{ value[0] }}: {{ value[1]|trim }}"
 {% endfor %}
 {% endfor %}
-         
+~                
