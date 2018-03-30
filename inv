@@ -1,0 +1,229 @@
+[base_config:children]
+uat_nas
+uat_nonas
+prd_nas
+prd_nonas
+
+[uat_nas]
+host_nas_uat1
+host_nas_uat2
+host_nas_uat3
+
+[uat_nonas]
+host_nonas_uat1
+host_nonas_uat2
+host_nonas_uat3
+
+[prd_nas]
+host_nas_prd1
+host_nas_prd2
+host_nas_prd3
+
+[prd_nonas]
+host_nonas_prd1
+host_nonas_prd2
+host_nonas_prd3
+
+GuyverMac:ld4 root# find group_vars/
+group_vars/
+group_vars//uat_nonas
+group_vars//uat_nonas/lvm.yml
+group_vars//base_config
+group_vars//base_config/lvm.yml
+group_vars//base_config/sysctl.yml
+group_vars//prd_nonas
+group_vars//uat_nas
+group_vars//uat_nas/lvm.yml
+group_vars//uat_nas/sysctl.yml
+group_vars//prd_nas
+group_vars//prd_nas/lvm.yml
+GuyverMac:ld4 root# cat group_vars//uat_nas/lvm.yml
+lvm_settings:
+  vm_groups:
+      - vgname: uat_nas_VG1
+        disks: /dev/sda5,/dev/sdc,/dev/sdd
+        create: true
+        lvnames:
+          - lvname: uat_lv1
+            size: 15g
+            create: true
+            filesystem:
+            mount: false
+            mount_point: /var/uat1
+          - lvname: uat_lv2
+            size: 10g
+            create: true
+            filesystem: ext4
+            mount: true
+            mount_point: /var/uat2
+            mount_options: 'defaults,noatime'
+GuyverMac:ld4 root# cat group_vars//base_config/lvm.yml
+base_lvm_settings:
+  vm_groups:
+      - vgname: base_vg1
+        disks: /dev/sda5,/dev/sdc,/dev/sdd
+        create: true
+        lvnames:
+          - lvname: base_lv1
+            size: 5g
+            create: true
+            filesystem:
+            mount: false
+            mount_point: /var/base1
+            mount_options: 'defaults,noatime'
+          - lvname: base_lv2
+            size: 40g
+            create: true
+            filesystem: ext4
+            mount: true
+            mount_point: /var/base2
+            mount_options: 'defaults,noatime'
+      - vgname: base_vg2
+        disks: /dev/sda5,/dev/sdc,/dev/sdd
+        create: true
+        lvnames:
+          - lvname: base_lv3
+            size: 5g
+            create: true
+            filesystem:
+            mount: false
+            mount_point: /var/base3
+          - lvname: base_lv4
+            size: 40g
+            create: true
+            filesystem: ext4
+            mount: true
+            mount_point: /var/base4
+GuyverMac:ld4 root# cat group_vars//uat_nas/sysctl.yml
+sysctl_settings:
+  settings:
+    - file: uat1
+      name : uat1
+      value : uat1
+
+GuyverMac:ld4 root# cat group_vars//base_config/sysctl.yml
+base_sysctl_settings:
+  settings:
+    - file: base1
+      name : base1
+      value : base1
+    - file: base2
+      name : base2
+      value : base2
+     
+GuyverMac:ld4 john$ cat com
+"lvm_settings": [
+            {
+                "create": true,
+                "disks": "/dev/sda5,/dev/sdc,/dev/sdd",
+                "lvnames": [
+                    {
+                        "create": true,
+                        "filesystem": null,
+                        "lvname": "base_lv1",
+                        "mount": false,
+                        "mount_options": "defaults,noatime",
+                        "mount_point": "/var/base1",
+                        "size": "5g"
+                    },
+                    {
+                        "create": true,
+                        "filesystem": "ext4",
+                        "lvname": "base_lv2",
+                        "mount": true,
+                        "mount_options": "defaults,noatime",
+                        "mount_point": "/var/base2",
+                        "size": "40g"
+                    }
+                ],
+                "vgname": "base_vg1"
+            },
+            {
+                "create": true,
+                "disks": "/dev/sda5,/dev/sdc,/dev/sdd",
+                "lvnames": [
+                    {
+                        "create": true,
+                        "filesystem": null,
+                        "lvname": "base_lv3",
+                        "mount": false,
+                        "mount_point": "/var/base3",
+                        "size": "5g"
+                    },
+                    {
+                        "create": true,
+                        "filesystem": "ext4",
+                        "lvname": "base_lv4",
+                        "mount": true,
+                        "mount_point": "/var/base4",
+                        "size": "40g"
+                    }
+                ],
+                "vgname": "base_vg2"
+            },
+            {
+                "create": true,
+                "disks": "/dev/sda5,/dev/sdc,/dev/sdd",
+                "lvnames": [
+                    {
+                        "create": true,
+                        "filesystem": null,
+                        "lvname": "uat_lv1",
+                        "mount": false,
+                        "mount_point": "/var/uat1",
+                        "size": "15g"
+                    },
+                    {
+                        "create": true,
+                        "filesystem": "ext4",
+                        "lvname": "uat_lv2",
+                        "mount": true,
+                        "mount_options": "defaults,noatime",
+                        "mount_point": "/var/uat2",
+                        "size": "10g"
+                    }
+                ],
+                "vgname": "uat_nas_VG1"
+            }
+        ],
+        "sysctl_settings": [
+            {
+                "file": "base1",
+                "name": "base1",
+                "value": "base1"
+            },
+            {
+                "file": "base2",
+                "name": "base2",
+                "value": "base2"
+            },
+            {
+                "file": "uat1",
+                "name": "uat1",
+                "value": "uat1"
+            }
+        ]
+    },
+
+  - name: "SET vars group {{ env }}_{{ type }}"
+      set_fact:
+        lvm_settings: "{{ base_lvm_settings['vm_groups'] +  lvm_settings['vm_groups'] }}"
+        sysctl_settings: "{{ base_sysctl_settings['settings'] + sysctl_settings['settings'] }}"
+        mydate: "{{lookup('pipe','date +%Y:%m:%d:%H:%M:%S')}}"
+    - name: sys line
+      lineinfile:
+        path: ./change.log
+        line: "{{ mydate }}-{{ inventory_hostname}} : file= {{ item.file }} name= {{ item.name }} value= {{ item.value }}"
+      with_items:
+        - "{{ sysctl_settings }}"
+      delegate_to: localhost
+
+    - name: lvm line
+      lineinfile:
+        path: ./change.log
+        line: "{{ mydate}}-{{ inventory_hostname}} : vg= {{ item.0.vgname }} lv= {{ item.1.lvname }} size= {{ item.1.size }}"
+      with_subelements:
+        - "{{ lvm_settings }}"
+        - lvnames
+      delegate_to: localhost
+
