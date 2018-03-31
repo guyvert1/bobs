@@ -38,6 +38,24 @@ group_vars//uat_nas/sysctl.yml
 group_vars//prd_nas
 group_vars//prd_nas/lvm.yml
 
+Not if base_config not there then below will not merge but if there will !
+
+    - name: Merge LVM settings
+      set_fact:
+        lvm_settings: "{{ base_lvm_settings +  lvm_settings }}"
+      when: base_lvm_settings|d()
+
+    - name: Merge sysctl settings
+      set_fact:
+        sysctl_settings: "{{ base_sysctl_settings + sysctl_settings }}"
+      when: base_sysctl_settings|d()
+
+    - name: debug
+      debug:
+        var: hostvars[inventory_hostname]
+
+
+
 GuyverMac:ld4 root# cat group_vars//uat_nas/lvm.yml
 lvm_settings:
   vm_groups:
