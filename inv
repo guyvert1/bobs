@@ -37,6 +37,7 @@ group_vars//uat_nas/lvm.yml
 group_vars//uat_nas/sysctl.yml
 group_vars//prd_nas
 group_vars//prd_nas/lvm.yml
+
 GuyverMac:ld4 root# cat group_vars//uat_nas/lvm.yml
 lvm_settings:
   vm_groups:
@@ -57,60 +58,58 @@ lvm_settings:
             mount: true
             mount_point: /var/uat2
             mount_options: 'defaults,noatime'
-GuyverMac:ld4 root# cat group_vars//base_config/lvm.yml
+[root@ansimaster ld4]# cat group_vars/base_config/lvm.yml 
 base_lvm_settings:
-  vm_groups:
-      - vgname: base_vg1
-        disks: /dev/sda5,/dev/sdc,/dev/sdd
-        create: true
-        lvnames:
-          - lvname: base_lv1
-            size: 5g
-            create: true
-            filesystem:
-            mount: false
-            mount_point: /var/base1
-            mount_options: 'defaults,noatime'
-          - lvname: base_lv2
-            size: 40g
-            create: true
-            filesystem: ext4
-            mount: true
-            mount_point: /var/base2
-            mount_options: 'defaults,noatime'
-      - vgname: base_vg2
-        disks: /dev/sda5,/dev/sdc,/dev/sdd
-        create: true
-        lvnames:
-          - lvname: base_lv3
-            size: 5g
-            create: true
-            filesystem:
-            mount: false
-            mount_point: /var/base3
-          - lvname: base_lv4
-            size: 40g
-            create: true
-            filesystem: ext4
-            mount: true
-            mount_point: /var/base4
-GuyverMac:ld4 root# cat group_vars//uat_nas/sysctl.yml
-sysctl_settings:
-  settings:
-    - file: uat1
-      name : uat1
-      value : uat1
+  - vg_name: volgrp02
+    pv_name: 
+      - /dev/sdb
+    lv_data:
+      - lv_name: data_tmp
+        size: 1g
+        mount: /data/tmp
+        mount_owner: vagrant
+        mount_group: vagrant
+        mount_dump: 1
+        mount_passno: 2
+        mount_opts: noatime,nodiratime
+        fstype: xfs
+      - lv_name: data_collect
+        size: 1g
+        mount: /data/collect
+        mount_owner: vagrant
+        mount_group: vagrant
+        mount_dump: 1
+        mount_passno: 2
+        mount_opts: noatime,nodiratime
+        fstype: xfs
+      - lv_name: data_teamquest
+        size: 1g
+        mount: /data/teamquest
+        mount_owner: vagrant
+        mount_group: vagrant
+        mount_dump: 1
+        mount_passno: 2
+        mount_opts: noatime,nodiratime
+        fstype: xfs
+      - lv_name: data_local0
+        size: 1g
+        mount: /data/local0
+        mount_owner: vagrant
+        mount_group: vagrant
+        mount_dump: 1
+        mount_passno: 2
+        mount_opts: noatime,nodiratime
+        fstype: xfs
+      - lv_name: data_local1
+        size: 1g
+        mount: /data/local2
+        mount_owner: vagrant
+        mount_group: vagrant
+        mount_dump: 1
+        mount_passno: 2
+        mount_opts: noatime,nodiratime
+        fstype: xfs
 
-GuyverMac:ld4 root# cat group_vars//base_config/sysctl.yml
-base_sysctl_settings:
-  settings:
-    - file: base1
-      name : base1
-      value : base1
-    - file: base2
-      name : base2
-      value : base2
-     
 GuyverMac:ld4 john$ cat com
 "lvm_settings": [
             {
@@ -205,25 +204,195 @@ GuyverMac:ld4 john$ cat com
         ]
     },
 
-  - name: "SET vars group {{ env }}_{{ type }}"
-      set_fact:
-        lvm_settings: "{{ base_lvm_settings['vm_groups'] +  lvm_settings['vm_groups'] }}"
-        sysctl_settings: "{{ base_sysctl_settings['settings'] + sysctl_settings['settings'] }}"
+       set_fact:
+        lvm_settings: "{{ base_lvm_settings +  lvm_settings }}"
+        sysctl_settings: "{{ base_sysctl_settings + sysctl_settings }}"
         mydate: "{{lookup('pipe','date +%Y:%m:%d:%H:%M:%S')}}"
-    - name: sys line
-      lineinfile:
-        path: ./change.log
-        line: "{{ mydate }}-{{ inventory_hostname}} : file= {{ item.file }} name= {{ item.name }} value= {{ item.value }}"
-      with_items:
-        - "{{ sysctl_settings }}"
-      delegate_to: localhost
 
-    - name: lvm line
-      lineinfile:
-        path: ./change.log
-        line: "{{ mydate}}-{{ inventory_hostname}} : vg= {{ item.0.vgname }} lv= {{ item.1.lvname }} size= {{ item.1.size }}"
-      with_subelements:
-        - "{{ lvm_settings }}"
-        - lvnames
-      delegate_to: localhost
+ name: LVG | Creating new LVM volume group(s)
+  lvg:
+    vg: "{{ item.vg_name }}"
+    pvs: "{{ item.pv_name | join(',') }}"
+    state: present
+  with_items: "{{ lvm_settings }}"
+  when: lvm_settings|d() 
+
+- name: LVOL | Creating new LVM logical volume(s)
+  lvol:
+    vg: "{{ item[0].vg_name }}"
+    lv: "{{ item[1].lv_name }}"
+    size: "{{ item[1].size }}"
+    state: present
+  register: lvm
+  with_subelements:
+    - "{{ lvm_settings }}"
+    - lv_data
+  when: lvm_settings|d() 
+
+- name: FILESYSTEM | Creating new filesystem on new LVM logical volume(s)
+  filesystem:
+    fstype: "{{ item[1].fstype }}"
+    dev: "/dev/{{ item[0].vg_name }}/{{ item[1].lv_name }}"
+#    resizefs: yes  #coming in 2.0 which will replace the resizing filesystem task below
+  with_subelements:
+    - "{{ lvm_settings }}"
+    - lv_data
+  when: lvm_settings|d() 
+
+- name: MOUNT | Mounting new filesystem(s)
+  mount:
+    name: "{{ item[1].mount }}"
+    src: "/dev/{{ item[0].vg_name }}/{{ item[1].lv_name }}"
+    fstype: "{{ item[1].fstype }}"
+    state: mounted
+    opts: "{{ item[1].mount_opts | default('defaults') }}"
+  with_subelements:
+    - "{{ lvm_settings }}"
+    - lv_data
+  when: lvm_settings|d() 
+
+-=-=
+
+- name: debug
+  debug:
+    msg: "{{ sysctl_settings }}"
+- name: add
+  sysctl:
+   sysctl_file: "{{ item.0.file }}"
+   name: "{{ item.1.split('=')[0]|trim }}"
+   value: "{{ item.1.split('=')[1]|trim }}"
+   state: present
+   ignoreerrors: yes
+   reload: yes
+  with_subelements:
+    - "{{ sysctl_settings }}"
+    - settings
+  register: sysctl_log
+
+- name: debug sysctl
+  debug:
+    msg: "{{ sysctl_log }}"
+    
+        "lvm_settings": [
+            {
+                "lv_data": [
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_tmp", 
+                        "mount": "/data/tmp", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }, 
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_collect", 
+                        "mount": "/data/collect", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }, 
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_teamquest", 
+                        "mount": "/data/teamquest", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }, 
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_local0", 
+                        "mount": "/data/local0", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }, 
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_local1", 
+                        "mount": "/data/local2", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }
+                ], 
+                "pv_name": [
+                    "/dev/sdb"
+                ], 
+                "vg_name": "volgrp02"
+            }, 
+            {
+                "lv_data": [
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_core", 
+                        "mount": "/data/core", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }
+                ], 
+                "pv_name": [
+                    "/dev/sdb"
+                ], 
+                "vg_name": "volgrp02"
+            }
+        ], {
+                "lv_data": [
+                    {
+                        "fstype": "xfs", 
+                        "lv_name": "data_core", 
+                        "mount": "/data/core", 
+                        "mount_dump": 1, 
+                        "mount_group": "vagrant", 
+                        "mount_opts": "noatime,nodiratime", 
+                        "mount_owner": "vagrant", 
+                        "mount_passno": 2, 
+                        "size": "1g"
+                    }
+                ], 
+                "pv_name": [
+                    "/dev/sdb"
+                ], 
+                "vg_name": "volgrp02"
+            }
+
+
+        "sysctl_settings": [
+            {
+                "file": "/etc/sysctl.d/77-ansible.conf", 
+                "settings": [
+                    "net.ipv4.tcp_keepalive_time = 300", 
+                    "net.ipv4.tcp_keepalive_probes = 5", 
+                    "net.ipv4.tcp_keepalive_intvl = 15"
+                ]
+            }, 
+            {
+                "file": "/etc/sysctl.d/99-ansible.conf", 
+                "settings": [
+                    "net.ipv4.tcp_keepalive_time = 300", 
+                    "net.ipv4.tcp_keepalive_probes = 5", 
+                    "net.ipv4.tcp_keepalive_intvl = 15"
+                ]
+            }
+        ]
 
