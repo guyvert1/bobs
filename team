@@ -1,0 +1,37 @@
+http://www.unixadmin.net/rhelcentos-7-creating-a-teamed-interface-interface-bonding/
+http://docs.ansible.com/ansible/latest/modules/nmcli_module.html
+
+# external_ip: "198.51.100.23/21"
+# external_gw: "198.51.100.254"
+
+# nmcli_team:
+#   - conn_name: external
+#     ip4: '{{ external_ip }}'
+#     gw4: '{{ external_gw }}'
+# nmcli_team_slave:
+#   - conn_name: em2
+#     ifname: em2
+#     master: tenant
+#   - conn_name: p2p1
+#     ifname: p2p1
+
+##### Working with all cloud nodes - Teaming
+  - name: try nmcli add team - conn_name only & ip4 gw4
+    nmcli:
+      type: team
+      conn_name: '{{ item.conn_name }}'
+      ip4: '{{ item.ip4 }}'
+      gw4: '{{ item.gw4 }}'
+      state: present
+    with_items:
+      - '{{ nmcli_team }}'
+
+  - name: try nmcli add teams-slave
+    nmcli:
+      type: team-slave
+      conn_name: '{{ item.conn_name }}'
+      ifname: '{{ item.ifname }}'
+      master: '{{ item.master }}'
+      state: present
+    with_items:
+      - '{{ nmcli_team_slave }}'
