@@ -1,0 +1,39 @@
+- name : TEST
+  hosts: localhost
+  vars:
+     file: ./tuned/tuned.conf
+     lif:
+       - section: sysctl
+         settings:
+             - "net.f=33"
+             - "net.r=33"
+             - "net.e=33"
+       - section: disk
+         settings:
+             - "aaa.f=33"
+             - "aaa.r=33"
+             - "bbb.e=33"
+       - section: none
+         settings:
+             - "rter.f=33"
+             - "cwfnet.r=33"
+             - "nrcwwet.e=33"
+  tasks:
+
+      - debug:
+            msg: "{{ lif }}"
+
+      - name: create
+        ini_file:
+           path: "{{ file }}"
+           section: "{{ item.0.section }}"
+           option: "{{ item.1.split('=')[0]|trim }}"
+           value: "{{ item.1.split('=')[1]|trim }}"
+           no_extra_spaces: True
+        with_subelements:
+           - "{{ lif }} "
+           - settings
+        register: crout
+
+      - debug:
+              msg: "{{crout}}"
