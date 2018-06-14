@@ -1,0 +1,52 @@
+- name : TEST
+  hosts: localhost
+  vars:
+     file: file.conf
+     lif:
+       - action: delete
+         key: ddd
+         value:
+       - action: add
+         key: ffff
+         value: ffff
+       - action: modify
+         key: aaaa
+         value: newvalue
+  tasks:
+
+      - debug:
+            msg: "{{ lif }}"
+
+      - name: Delete line
+        lineinfile:
+           path: "{{ file }}"
+           state: absent
+           regexp: "(^{{ item.key }}=.*)"
+           line: '\1'
+           backrefs: yes
+        with_items:
+           - "{{ lif }} "
+        when: '"delete" in item.action'
+        register: delout
+
+      - name: Add line
+        lineinfile:
+           path: "{{ file }}"
+           state: present
+           line: '{{ item.key }}="{{ item.value }}"'
+        with_items:
+           - "{{ lif }} "
+        when: '"add" in item.action'
+        register: addout
+
+      - name: Modify line
+        lineinfile:
+           path: "{{ file }}"
+           state: present
+           regexp: "(^{{ item.key }}=).*"
+           line: '\1"{{ item.value }}"'
+           backrefs: yes
+        with_items:
+           - "{{ lif }} "
+        when: '"modify" in item.action'
+        register: delout
