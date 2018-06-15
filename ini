@@ -37,3 +37,43 @@
 
       - debug:
               msg: "{{crout}}"
+              
+              ============================================
+- name : TEST
+  hosts: localhost
+  vars:
+     file: ./tuned/tuned.conf
+     lif:
+       - section: sysctl
+         settings:
+             - "net.f=33"
+             - "net.r=33"
+             - "net.e=33"
+       - section: disk
+         settings:
+             - "aaa.f=33"
+             - "aaa.r=999999999"
+       - section: none
+         settings:
+                 - "absent"
+  tasks:
+
+      - debug:
+            msg: "{{ lif }}"
+
+      - name: create
+        ini_file:
+           path: "{{ file }}"
+           section: "{{ item.0.section }}"
+           option: "{{ item.1.split('=')[0]|default(omit) }}"
+           value:  "{{ item.1.split('=')[1]|default(omit) }}"
+           state: "{{ ('absent' in item.1 ) |ternary('absent','present') }}"
+           no_extra_spaces: True
+        wit
+        h_subelements:
+           - "{{ lif }} "
+           - settings
+        register: crout
+
+      - debug:
+              msg: "{{crout}}"
