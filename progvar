@@ -1,0 +1,13 @@
+- include_vars: "vars/main.yml"
+
+  - set_fact:
+      variable1: "var1"
+      variable2: "var2"
+  - set_fact:
+      final_variable: "{{ variable1 }}_{{ variable2 }}"
+
+  - set_fact: 
+      ultimate_variable: "{{ lookup('vars', '{{final_variable}}') }}"
+
+  - debug:
+      var: ultimate_variable
