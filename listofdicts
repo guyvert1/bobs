@@ -1,0 +1,18 @@
+https://stackoverflow.com/questions/8358236/concatenating-unique-values-from-list-of-dictionaries-with-sames-keys-in-python
+
+data = [ {"key1": "value1", "key2": "value2", "key3": "value3"},  
+         {"key1": "value4", "key2": "value5", "key3": "value3"}, 
+         {"key1": "value1", "key2": "value8", "key3": "value3"} ]
+I want to make a new dictionary out of data that would like as follows:
+
+myDict = {"key1": "value1, value4", "key2": "value2, value5, value8", "key3": "value3"}
+
+from collections import defaultdict
+temp_dict = defaultdict(set)
+for item in data:
+   for key, value in item.items():
+       temp_dict[key].add(value)
+       
+my_dict = {}
+for key, value in temp_dict.items():
+    my_dict[key] = ", ".join(value)
