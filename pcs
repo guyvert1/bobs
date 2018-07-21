@@ -1,0 +1,13 @@
+My IPaddr2 resource does not fail or recover when the network interface's link goes down in a RHEL 6 or 7 High Availability cluster with pacemaker
+https://access.redhat.com/solutions/2044713
+
+How can I configure my RHEL 6 or 7 High Availability cluster with pacemaker to monitor the link status of a network interface and relocate resources if a failure occurs?
+https://access.redhat.com/solutions/2049063
+
+What is the proper way to simulate a network failure on a RHEL Cluster?
+https://access.redhat.com/solutions/79523
+
+Support Policies for RHEL High Availability Clusters - Cluster Interconnect Network Interfaces
+https://access.redhat.com/articles/3068841
+
+https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/9/html/understanding_red_hat_openstack_platform_high_availability/pacemaker
